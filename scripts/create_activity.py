@@ -76,7 +76,6 @@ def main() -> int:
         return 1
 
     print(f"Created activity folder: {created.relative_to(ROOT)}")
-    print("Formatting note: activity-info.json uses 2-space indentation (Prettier compatible).")
     return 0
 
 
