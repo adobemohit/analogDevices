@@ -11,7 +11,7 @@
     "variants": [
         {
             "variant": "variant_a",
-            "html_file": "home-page-heading-change_xt_test_exp_a.html",
+            "html_file": "git-hub-home-page-heading-change_xt_test_exp_a.html",
             "offer_name": "Home Page Banner - Variant A",
             "offer_id": null,
             "mode": "create_or_update"
