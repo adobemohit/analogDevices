@@ -9,14 +9,15 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(ROOT / "scripts"))
 
-from deploy_to_target_mcp import (  # noqa: E402
+from activity_discovery import (  # noqa: E402
+    ROOT as DISCOVERY_ROOT,
     get_newly_added_activity_folders,
     load_config,
 )
 
 
 def format_folder(path: Path) -> str:
-    return str(path.relative_to(ROOT)).replace("\\", "/")
+    return str(path.relative_to(DISCOVERY_ROOT)).replace("\\", "/")
 
 
 def main() -> int:
