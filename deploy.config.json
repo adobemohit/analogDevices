@@ -4,7 +4,7 @@
   "discovery": {
     "info_file": "activity-info.json",
     "html_pattern": "*.html",
-    "exclude_dirs": [".github", "scripts", ".git", "node_modules", "css", "js", "__pycache__"],
+    "exclude_dirs": [".github", "scripts", ".git", "node_modules", "css", "js", "__pycache__", "_activity_template"],
     "deploy_only_new_folders": true
   },
   "default_actions": {

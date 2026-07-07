@@ -1,9 +1,9 @@
 {
   "activity_id": 0,
-  "activity_name": "Summer Promo CTA Banner XT Test",
-  "activity_description": "New XT activity for summer promo CTA banner deployment",
+  "activity_name": "Your Activity Name",
+  "activity_description": "Describe the activity purpose",
   "activity_status": "active",
-  "activity_start_date": "2026-07-01",
+  "activity_start_date": "2026-01-01",
   "activity_end_date": "2026-12-31",
   "activity_type": "XT",
   "activity_location": "home",
@@ -11,8 +11,8 @@
   "variants": [
     {
       "variant": "variant_a",
-      "html_file": "summer_promo_cta_banner_xt_test_exp_a.html",
-      "offer_name": "Summer Promo CTA Banner - Variant A",
+      "html_file": "your_activity_name_exp_a.html",
+      "offer_name": "Your Activity Name - Variant A",
       "offer_id": null,
       "mode": "create_or_update"
     }
