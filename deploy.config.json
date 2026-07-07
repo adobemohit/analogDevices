@@ -1,16 +1,17 @@
 {
-  "description": "Global deploy settings. Activities are auto-discovered from any folder containing activity-info.json.",
+  "description": "Global deploy settings. Only newly added activity folders (new activity-info.json in merge) are deployed.",
   "mcp_server_url": "https://targetmcp.adobe.io/mcp",
   "discovery": {
     "info_file": "activity-info.json",
     "html_pattern": "*.html",
-    "exclude_dirs": [".github", "scripts", ".git", "node_modules", "css", "js", "__pycache__"]
+    "exclude_dirs": [".github", "scripts", ".git", "node_modules", "css", "js", "__pycache__"],
+    "deploy_only_new_folders": true
   },
   "default_actions": {
     "push_offer": true,
     "attach_offer_to_variant": true,
     "sync_activity_state": false,
-    "create_activity_if_missing": false
+    "create_activity_if_missing": true
   },
   "status_map": {
     "active": "approved",
