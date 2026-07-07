@@ -13,17 +13,79 @@ import httpx
 
 ROOT = Path(__file__).resolve().parent.parent
 CONFIG_PATH = ROOT / "deploy.config.json"
+DEFAULT_ADOBE_SCOPES = (
+    "openid,AdobeID,target_sdk,additional_info.roles,"
+    "read_organizations,additional_info.projectedProductContext"
+)
+
+
+def fetch_access_token_from_client_credentials(config: dict) -> str:
+    client_id = os.environ.get("ADOBE_CLIENT_ID", "").strip()
+    client_secret = os.environ.get("ADOBE_CLIENT_SECRET", "").strip()
+
+    if not client_id or not client_secret:
+        raise ValueError(
+            "ADOBE_CLIENT_ID and ADOBE_CLIENT_SECRET are required to refresh token"
+        )
+
+    auth_config = config.get("auth", {})
+    token_url = auth_config.get(
+        "ims_token_url", "https://ims-na1.adobelogin.com/ims/token/v3"
+    )
+    scopes = auth_config.get("scopes", DEFAULT_ADOBE_SCOPES)
+
+    print("Fetching Adobe access token using client credentials...")
+    with httpx.Client(timeout=60.0) as client:
+        response = client.post(
+            token_url,
+            data={
+                "grant_type": "client_credentials",
+                "client_id": client_id,
+                "client_secret": client_secret,
+                "scope": scopes,
+            },
+            headers={"Content-Type": "application/x-www-form-urlencoded"},
+        )
+        response.raise_for_status()
+        payload = response.json()
+
+    access_token = payload.get("access_token")
+    if not access_token:
+        raise RuntimeError("Adobe IMS response did not include access_token")
+
+    expires_in = payload.get("expires_in", "unknown")
+    print(f"Adobe access token fetched successfully (expires_in={expires_in}).")
+    return access_token
+
+
+def resolve_access_token(config: dict, force_refresh: bool = False) -> str:
+    if force_refresh:
+        return fetch_access_token_from_client_credentials(config)
+
+    access_token = os.environ.get("ADOBE_ACCESS_TOKEN", "").strip()
+    if access_token:
+        print("Using ADOBE_ACCESS_TOKEN from GitHub Secrets.")
+        return access_token
+
+    return fetch_access_token_from_client_credentials(config)
 
 
 class McpClient:
     def __init__(self, url: str, token: str) -> None:
         self.url = url
+        self.token = token
         self.headers = {
             "Authorization": f"Bearer {token}",
             "Content-Type": "application/json",
             "Accept": "application/json, text/event-stream",
         }
         self.session_id: str | None = None
+        self.request_id = 0
+
+    def set_token(self, token: str) -> None:
+        self.token = token
+        self.headers["Authorization"] = f"Bearer {token}"
+        self.session_id = None
         self.request_id = 0
 
     def call(self, method: str, params: dict | None = None) -> dict:
@@ -333,16 +395,17 @@ def deploy_activity_folder(
 
 
 def main() -> int:
-    token = os.environ.get("ADOBE_ACCESS_TOKEN")
-    if not token:
-        print("Missing ADOBE_ACCESS_TOKEN environment variable.", file=sys.stderr)
-        return 1
-
     config = load_config()
     mcp_url = os.environ.get(
         "MCP_SERVER_URL",
         config.get("mcp_server_url", "https://targetmcp.adobe.io/mcp"),
     )
+
+    try:
+        token = resolve_access_token(config)
+    except (ValueError, RuntimeError, httpx.HTTPError) as error:
+        print(f"Failed to resolve Adobe access token: {error}", file=sys.stderr)
+        return 1
 
     activity_folders = discover_activity_folders(config)
     if not activity_folders:
@@ -351,12 +414,33 @@ def main() -> int:
 
     print(
         "Discovered activity folders: "
-        + ", ".join(str(path.relative_to(ROOT)).replace("\\", "/") for path in activity_folders)
+        + ", ".join(
+            str(path.relative_to(ROOT)).replace("\\", "/")
+            for path in activity_folders
+        )
     )
 
     client = McpClient(mcp_url, token)
     print("Connecting to Adobe Target MCP server...")
-    client.initialize()
+
+    try:
+        client.initialize()
+    except httpx.HTTPStatusError as error:
+        if error.response.status_code != 401:
+            raise
+
+        print("Access token rejected (401). Refreshing token from client credentials...")
+        try:
+            refreshed_token = resolve_access_token(config, force_refresh=True)
+            client.set_token(refreshed_token)
+            client.initialize()
+        except (ValueError, RuntimeError, httpx.HTTPError) as refresh_error:
+            print(
+                "Token refresh failed. Update ADOBE_ACCESS_TOKEN in GitHub Secrets.",
+                file=sys.stderr,
+            )
+            print(refresh_error, file=sys.stderr)
+            return 1
 
     all_results = [
         deploy_activity_folder(client, folder, config) for folder in activity_folders
