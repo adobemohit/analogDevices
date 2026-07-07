@@ -2,19 +2,5 @@
   "printWidth": 100,
   "tabWidth": 2,
   "useTabs": false,
-  "htmlWhitespaceSensitivity": "ignore",
-  "overrides": [
-    {
-      "files": "activity-info.json",
-      "options": {
-        "parser": "json"
-      }
-    },
-    {
-      "files": "**/activity-info.json",
-      "options": {
-        "parser": "json"
-      }
-    }
-  ]
+  "htmlWhitespaceSensitivity": "ignore"
 }

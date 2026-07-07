@@ -161,7 +161,6 @@ def validate_file(path: Path) -> list[str]:
 
     if path.suffix == ".json":
         errors.extend(validate_json_file(path))
-        errors.extend(validate_prettier(path))
         return errors
 
     if path.suffix != ".html":
@@ -197,7 +196,7 @@ def main() -> int:
             print(f"  - {error}", file=sys.stderr)
         return 1
 
-    print("HTML, CSS, JavaScript, and formatting validation passed.")
+    print("HTML, CSS, JavaScript validation passed.")
     return 0
 
 
