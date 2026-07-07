@@ -1,7 +1,7 @@
 {
   "activity_id": 0,
   "activity_name": "Your Activity Name",
-  "activity_description": "Describe the activity purpose",
+  "activity_description": "Describe the activity purpose. After first deploy, save activity_id and offer_id for future updates.",
   "activity_status": "active",
   "activity_start_date": "2026-01-01",
   "activity_end_date": "2026-12-31",

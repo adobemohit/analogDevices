@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Local pre-push check: block push to main without a new activity folder."""
+"""Local pre-push check: block push to main without activity changes."""
 
 from __future__ import annotations
 
@@ -11,7 +11,7 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(ROOT / "scripts"))
 
-from activity_discovery import get_newly_added_activity_folders, load_config  # noqa: E402
+from activity_discovery import get_deployable_activity_changes, load_config  # noqa: E402
 
 
 def get_current_branch() -> str:
@@ -28,7 +28,7 @@ def get_current_branch() -> str:
 def main() -> int:
     branch = get_current_branch()
     if branch != "main":
-        print(f"On branch '{branch}'. Skipping new-activity-folder check.")
+        print(f"On branch '{branch}'. Skipping activity change check.")
         return 0
 
     before_sha = subprocess.run(
@@ -53,17 +53,21 @@ def main() -> int:
     os.environ["GITHUB_SHA"] = after_sha.stdout.strip()
 
     config = load_config()
-    folders = get_newly_added_activity_folders(config)
-    if folders:
-        print("Local check passed. New activity folder detected.")
+    changes = get_deployable_activity_changes(config)
+    if changes:
+        labels = ", ".join(
+            f"{change['folder'].relative_to(ROOT).as_posix()} ({change['mode']})"
+            for change in changes
+        )
+        print(f"Local check passed. Activity changes detected: {labels}")
         return 0
 
     print(
-        "ERROR: No newly created activity folder in this commit.",
+        "ERROR: No activity changes detected in this commit.",
         file=sys.stderr,
     )
     print(
-        "Add a new folder with activity-info.json before pushing to main.",
+        "Add a new activity folder or update an existing one before pushing to main.",
         file=sys.stderr,
     )
     return 1

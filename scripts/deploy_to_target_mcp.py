@@ -13,7 +13,7 @@ import httpx
 
 from activity_discovery import (
     ROOT,
-    get_newly_added_activity_folders,
+    get_deployable_activity_changes,
     load_config,
 )
 DEFAULT_ADOBE_SCOPES = (
@@ -510,8 +510,26 @@ def sync_activity_state(
     return extract_tool_result(response)
 
 
+def validate_update_requirements(
+    activity_info: dict, offers: list[dict], folder: Path
+) -> None:
+    activity_id = activity_info.get("activity_id")
+    if not activity_id:
+        raise DeployValidationError(
+            f"Update deploy for '{folder.name}' requires a non-zero activity_id "
+            "in activity-info.json."
+        )
+
+    for offer in offers:
+        if not offer.get("offer_id"):
+            raise DeployValidationError(
+                f"Update deploy for '{folder.name}' requires offer_id for "
+                f"'{offer.get('html_file', 'offer')}' in activity-info.json."
+            )
+
+
 def deploy_activity_folder(
-    client: McpClient, folder: Path, config: dict, *, is_new_folder: bool
+    client: McpClient, folder: Path, config: dict, *, deploy_mode: str
 ) -> dict:
     discovery = config.get("discovery", {})
     info_file = discovery.get("info_file", "activity-info.json")
@@ -525,16 +543,26 @@ def deploy_activity_folder(
     results = {
         "folder": str(folder.relative_to(ROOT)).replace("\\", "/"),
         "activity_name": activity_info.get("activity_name"),
-        "is_new_folder": is_new_folder,
+        "deploy_mode": deploy_mode,
         "activity_create_result": None,
+        "activity_update_result": None,
         "offers": [],
         "activity_state": None,
     }
 
-    print(f"\nDeploying new activity folder: {results['folder']}")
+    print(f"\nDeploying activity folder ({deploy_mode}): {results['folder']}")
+
+    if deploy_mode == "update":
+        validate_update_requirements(activity_info, offers, folder)
+        for offer in offers:
+            offer["mode"] = "update"
+        print(
+            f"INFO: Updating existing Adobe Target activity "
+            f"'{activity_info['activity_name']}' (id={activity_info['activity_id']})."
+        )
 
     should_create_activity = (
-        is_new_folder
+        deploy_mode == "create"
         and actions.get("create_activity_if_missing", False)
         and not activity_info.get("activity_id")
     )
@@ -557,6 +585,10 @@ def deploy_activity_folder(
             f"INFO: Using existing Adobe Target activity "
             f"'{activity_info['activity_name']}' (id={activity_info['activity_id']})."
         )
+        results["activity_update_result"] = {
+            "activity_id": activity_info.get("activity_id"),
+            "message": "Existing activity reused for offer update",
+        }
 
     if not offers:
         print("No offers found to deploy.")
@@ -614,8 +646,10 @@ def print_deploy_summary(all_results: list[dict]) -> None:
     for result in all_results:
         folder = result.get("folder", "unknown")
         activity_name = result.get("activity_name", "unknown")
+        deploy_mode = result.get("deploy_mode", "unknown")
         print(f"\nFolder: {folder}")
         print(f"Activity: {activity_name}")
+        print(f"Mode: {deploy_mode}")
 
         activity_create = result.get("activity_create_result") or {}
         activity_id = activity_create.get("id")
@@ -623,6 +657,13 @@ def print_deploy_summary(all_results: list[dict]) -> None:
             print(
                 f"  - Activity created in Adobe Target: "
                 f"'{activity_name}' (id={activity_id})"
+            )
+        elif deploy_mode == "update":
+            update_result = result.get("activity_update_result") or {}
+            existing_id = update_result.get("activity_id")
+            print(
+                f"  - Activity updated in Adobe Target: "
+                f"'{activity_name}' (id={existing_id})"
             )
         else:
             print("  - Activity not created in this deploy run.")
@@ -637,8 +678,9 @@ def print_deploy_summary(all_results: list[dict]) -> None:
             offer_id = offer_result.get("id")
             html_file = offer.get("html_file", "unknown")
             if offer_id:
+                action = "updated" if deploy_mode == "update" else "deployed"
                 print(
-                    f"  - Offer deployed from '{html_file}' "
+                    f"  - Offer {action} from '{html_file}' "
                     f"in Adobe Target (id={offer_id})"
                 )
             else:
@@ -660,23 +702,23 @@ def main() -> int:
         print(f"Failed to resolve Adobe access token: {error}", file=sys.stderr)
         return 1
 
-    activity_folders = get_newly_added_activity_folders(config)
-    if not activity_folders:
+    activity_changes = get_deployable_activity_changes(config)
+    if not activity_changes:
         print(
-            "ERROR: No newly created activity folders in this merge.",
+            "ERROR: No activity changes found in this merge.",
             file=sys.stderr,
         )
         print(
-            "Add a new activity folder with activity-info.json before merging to main.",
+            "Add a new activity folder or update an existing activity folder.",
             file=sys.stderr,
         )
         return 1
 
     print(
-        "New activity folders to deploy: "
+        "Activity changes to deploy: "
         + ", ".join(
-            str(path.relative_to(ROOT)).replace("\\", "/")
-            for path in activity_folders
+            f"{change['folder'].relative_to(ROOT).as_posix()} ({change['mode']})"
+            for change in activity_changes
         )
     )
 
@@ -704,9 +746,14 @@ def main() -> int:
 
     all_results = []
     try:
-        for folder in activity_folders:
+        for change in activity_changes:
             all_results.append(
-                deploy_activity_folder(client, folder, config, is_new_folder=True)
+                deploy_activity_folder(
+                    client,
+                    change["folder"],
+                    config,
+                    deploy_mode=change["mode"],
+                )
             )
     except DeployValidationError as error:
         print(f"Deploy validation failed: {error}", file=sys.stderr)

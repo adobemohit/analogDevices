@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Fail CI when a merge does not include a newly created activity folder."""
+"""Fail CI when a merge does not include a new or updated activity folder."""
 
 from __future__ import annotations
 
@@ -11,37 +11,43 @@ sys.path.insert(0, str(ROOT / "scripts"))
 
 from activity_discovery import (  # noqa: E402
     ROOT as DISCOVERY_ROOT,
-    get_newly_added_activity_folders,
+    get_deployable_activity_changes,
     load_config,
 )
 
 
-def format_folder(path: Path) -> str:
-    return str(path.relative_to(DISCOVERY_ROOT)).replace("\\", "/")
+def format_change(change: dict) -> str:
+    folder = str(change["folder"].relative_to(DISCOVERY_ROOT)).replace("\\", "/")
+    return f"{folder} ({change['mode']})"
 
 
 def main() -> int:
     config = load_config()
-    activity_folders = get_newly_added_activity_folders(config)
+    changes = get_deployable_activity_changes(config)
 
-    if activity_folders:
-        folder_list = ", ".join(format_folder(folder) for folder in activity_folders)
-        print(f"Validation passed. New activity folders found: {folder_list}")
+    if changes:
+        change_list = ", ".join(format_change(change) for change in changes)
+        print(f"Validation passed. Activity changes found: {change_list}")
         return 0
 
     print(
-        "ERROR: No newly created activity folders in this merge.",
+        "ERROR: No activity changes found in this merge.",
         file=sys.stderr,
     )
     print(
-        "To merge to main, add a new activity folder with activity-info.json.",
+        "To merge to main, either:",
         file=sys.stderr,
     )
     print(
-        "Example:\n"
-        "  my_new_activity/\n"
-        "    activity-info.json\n"
-        "    my_new_activity_exp_a.html",
+        "  1. Add a new activity folder with activity-info.json, or",
+        file=sys.stderr,
+    )
+    print(
+        "  2. Update an existing activity folder (HTML or activity-info.json).",
+        file=sys.stderr,
+    )
+    print(
+        "For updates, set activity_id and offer_id in activity-info.json.",
         file=sys.stderr,
     )
     return 1

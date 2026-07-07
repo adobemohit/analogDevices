@@ -17,7 +17,7 @@ ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(ROOT / "scripts"))
 
 from activity_discovery import (  # noqa: E402
-    get_newly_added_activity_folders,
+    collect_changed_activity_files,
     load_config,
 )
 
@@ -40,18 +40,7 @@ def wrap_html_fragment(content: str) -> str:
 
 
 def collect_files_for_validation(config: dict) -> list[Path]:
-    folders = get_newly_added_activity_folders(config)
-    files: list[Path] = []
-
-    for folder in folders:
-        files.extend(sorted(folder.glob("*.html")))
-        info_file = folder / config.get("discovery", {}).get(
-            "info_file", "activity-info.json"
-        )
-        if info_file.exists():
-            files.append(info_file)
-
-    return files
+    return collect_changed_activity_files(config)
 
 
 def validate_html_structure(path: Path, content: str) -> list[str]:
