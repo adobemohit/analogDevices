@@ -14,7 +14,7 @@ concurrency:
 
 jobs:
   validate-new-activity:
-    name: Validate new activity folder
+    name: Validate activity changes
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
@@ -38,7 +38,7 @@ jobs:
       - name: Install Node dependencies
         run: npm install
 
-      - name: Check for newly created activity folder
+      - name: Check for activity create or update changes
         env:
           GITHUB_BEFORE_SHA: ${{ github.event.pull_request.base.sha || github.event.before }}
           GITHUB_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
