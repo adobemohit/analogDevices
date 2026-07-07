@@ -3,6 +3,7 @@
 
 from __future__ import annotations
 
+import os
 import subprocess
 import sys
 from pathlib import Path
@@ -10,7 +11,7 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(ROOT / "scripts"))
 
-from deploy_to_target_mcp import get_newly_added_activity_folders, load_config  # noqa: E402
+from activity_discovery import get_newly_added_activity_folders, load_config  # noqa: E402
 
 
 def get_current_branch() -> str:
@@ -44,8 +45,6 @@ def main() -> int:
         cwd=ROOT,
         check=True,
     )
-
-    import os
 
     if before_sha.returncode == 0:
         os.environ["GITHUB_BEFORE_SHA"] = before_sha.stdout.strip()
