@@ -6,6 +6,7 @@ from __future__ import annotations
 import json
 import os
 import re
+import subprocess
 import sys
 from pathlib import Path
 
@@ -247,6 +248,106 @@ def discover_activity_folders(config: dict) -> list[Path]:
     return sorted(folders)
 
 
+def get_git_changed_files(before_sha: str, after_sha: str) -> list[tuple[str, str]]:
+    result = subprocess.run(
+        ["git", "diff", "--name-status", before_sha, after_sha],
+        capture_output=True,
+        text=True,
+        cwd=ROOT,
+        check=True,
+    )
+
+    changes: list[tuple[str, str]] = []
+    for line in result.stdout.splitlines():
+        if not line.strip():
+            continue
+        parts = line.split("\t")
+        if len(parts) < 2:
+            continue
+        status = parts[0]
+        path = parts[-1]
+        changes.append((status, path.replace("\\", "/")))
+    return changes
+
+
+def get_newly_added_activity_folders(config: dict) -> list[Path]:
+    discovery = config.get("discovery", {})
+    info_file = discovery.get("info_file", "activity-info.json")
+    deploy_only_new = discovery.get("deploy_only_new_folders", True)
+
+    all_folders = discover_activity_folders(config)
+    if not deploy_only_new:
+        return all_folders
+
+    before_sha = os.environ.get("GITHUB_BEFORE_SHA", "").strip()
+    after_sha = os.environ.get("GITHUB_SHA", "").strip()
+
+    if not after_sha:
+        print("GITHUB_SHA not set. Deploying all discovered activity folders.")
+        return all_folders
+
+    if not before_sha or before_sha == "0" * 40:
+        print("First push detected. Treating all activity folders as new.")
+        return all_folders
+
+    changed_files = get_git_changed_files(before_sha, after_sha)
+    new_folders: set[Path] = set()
+
+    for status, path in changed_files:
+        if not status.startswith("A"):
+            continue
+        if not path.endswith(info_file):
+            continue
+        folder = (ROOT / path).parent
+        if folder.exists():
+            new_folders.add(folder.resolve())
+
+    return sorted(new_folders)
+
+
+def build_activity_locations(activity_info: dict) -> list[dict]:
+    location = activity_info.get("activity_location", "default")
+    return [{"name": location}]
+
+
+def build_activity_experiences(activity_info: dict) -> list[dict]:
+    experiences: list[dict] = []
+
+    for variant in activity_info.get("variants", []):
+        experiences.append({"name": variant.get("variant", "Experience A")})
+
+    if experiences:
+        return experiences
+
+    variant_name = activity_info.get("activity_variant", "Experience A")
+    return [{"name": variant_name}]
+
+
+def create_target_activity(
+    client: McpClient, activity_info: dict, type_map: dict
+) -> dict:
+    activity_type = map_activity_type(activity_info.get("activity_type", "XT"), type_map)
+    tool_name = f"create_{activity_type}_activity"
+
+    params = {
+        "name": activity_info["activity_name"],
+        "state": "saved",
+        "experiences": build_activity_experiences(activity_info),
+        "locations": build_activity_locations(activity_info),
+    }
+
+    if starts_at := activity_info.get("activity_start_date"):
+        params["starts_at"] = starts_at
+    if ends_at := activity_info.get("activity_end_date"):
+        params["ends_at"] = ends_at
+    if description := activity_info.get("activity_description"):
+        params["description"] = description
+
+    print(f"Creating Target activity via {tool_name}...")
+    response = client.call_tool(tool_name, params)
+    return extract_tool_result(response)
+
+
 def deploy_offer(client: McpClient, offer_config: dict, html_content: str) -> dict:
     offer_name = offer_config["offer_name"]
     offer_id = offer_config.get("offer_id")
@@ -331,7 +432,7 @@ def sync_activity_state(
 
 
 def deploy_activity_folder(
-    client: McpClient, folder: Path, config: dict
+    client: McpClient, folder: Path, config: dict, *, is_new_folder: bool
 ) -> dict:
     discovery = config.get("discovery", {})
     info_file = discovery.get("info_file", "activity-info.json")
@@ -344,11 +445,31 @@ def deploy_activity_folder(
     results = {
         "folder": str(folder.relative_to(ROOT)).replace("\\", "/"),
         "activity_name": activity_info.get("activity_name"),
+        "is_new_folder": is_new_folder,
+        "activity_create_result": None,
         "offers": [],
         "activity_state": None,
     }
 
-    print(f"\nDeploying activity folder: {results['folder']}")
+    print(f"\nDeploying new activity folder: {results['folder']}")
+
+    should_create_activity = (
+        is_new_folder
+        and actions.get("create_activity_if_missing", False)
+        and not activity_info.get("activity_id")
+    )
+
+    if should_create_activity:
+        activity_result = create_target_activity(
+            client,
+            activity_info,
+            config.get("activity_type_map", {}),
+        )
+        results["activity_create_result"] = activity_result
+        created_id = activity_result.get("id")
+        if created_id:
+            activity_info["activity_id"] = created_id
+            print(f"Created Target activity with id={created_id}")
 
     if not offers:
         print("No offers found to deploy.")
@@ -407,13 +528,13 @@ def main() -> int:
         print(f"Failed to resolve Adobe access token: {error}", file=sys.stderr)
         return 1
 
-    activity_folders = discover_activity_folders(config)
+    activity_folders = get_newly_added_activity_folders(config)
     if not activity_folders:
-        print("No activity folders found (looking for activity-info.json).")
+        print("No newly created activity folders in this merge. Skipping deploy.")
         return 0
 
     print(
-        "Discovered activity folders: "
+        "New activity folders to deploy: "
         + ", ".join(
             str(path.relative_to(ROOT)).replace("\\", "/")
             for path in activity_folders
@@ -443,7 +564,8 @@ def main() -> int:
             return 1
 
     all_results = [
-        deploy_activity_folder(client, folder, config) for folder in activity_folders
+        deploy_activity_folder(client, folder, config, is_new_folder=True)
+        for folder in activity_folders
     ]
 
     print("\nDeployment summary:")
