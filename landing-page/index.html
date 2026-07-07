@@ -1,0 +1,868 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta
+      name="description"
+      content="Target Activity Deploy using GitHub and MCP — GitOps pipeline for managing Adobe Target XT and A/B activities as version-controlled HTML offers."
+    />
+    <title>Target Activity Deploy using GitHub and MCP</title>
+    <link rel="stylesheet" href="css/main.css" />
+  </head>
+  <body>
+    <nav class="site-nav">
+      <div class="container">
+        <a class="brand" href="#top">
+          <span class="brand-mark">AT</span>
+          <span class="brand-text">
+            <span class="brand-title">Target Activity Deploy</span>
+            <span class="brand-subtitle">(Adobe Target GitOps Deployment)</span>
+          </span>
+        </a>
+        <ul class="nav-links">
+          <li><a href="#features">Features</a></li>
+          <li><a href="#pros-cons">Pros &amp; Cons</a></li>
+          <li><a href="#architecture">Architecture</a></li>
+          <li><a href="#quickstart">Quick Start</a></li>
+          <li><a href="#docs">Documentation</a></li>
+          <li><a href="#faq">FAQ</a></li>
+          <li>
+            <a class="nav-cta" href="../README.md" target="_blank" rel="noopener"
+              >Read README</a
+            >
+          </li>
+        </ul>
+        <button class="menu-toggle" type="button" aria-label="Toggle menu">
+          ☰
+        </button>
+      </div>
+    </nav>
+
+    <main id="top">
+      <section class="hero">
+        <div class="container hero-grid">
+          <div class="hero-content">
+            <div class="eyebrow">
+              <span class="eyebrow-dot"></span>
+              GitHub Actions · Adobe Target MCP
+            </div>
+            <h1>
+              Target Activity Deploy<br />
+              <span>using GitHub and MCP</span>
+            </h1>
+            <p class="hero-lead">
+              Ship Adobe Target Experience Targeting and A/B Test activities from
+              GitHub. Author HTML offers in activity folders, validate in pull
+              requests, and publish to Adobe Target through the official MCP
+              server — automatically on merge to <code>main</code>.
+            </p>
+            <div class="hero-actions">
+              <a class="btn btn-primary" href="#quickstart">Get Started</a>
+              <a class="btn btn-secondary" href="#architecture"
+                >View Architecture</a
+              >
+            </div>
+          </div>
+
+          <aside class="hero-card" aria-label="Deploy pipeline overview">
+            <div class="hero-card-header">
+              <span class="hero-card-title">Deploy Pipeline</span>
+              <span class="status-pill">● Production Ready</span>
+            </div>
+            <div class="pipeline-steps">
+              <div class="pipeline-step">
+                <span class="step-num">1</span>
+                <div class="step-content">
+                  <strong>Detect changes</strong>
+                  <span>New activity folder or update to existing folder</span>
+                </div>
+              </div>
+              <div class="pipeline-step">
+                <span class="step-num">2</span>
+                <div class="step-content">
+                  <strong>Validate code</strong>
+                  <span>HTML, CSS, JS syntax and activity metadata</span>
+                </div>
+              </div>
+              <div class="pipeline-step">
+                <span class="step-num">3</span>
+                <div class="step-content">
+                  <strong>Deploy via MCP</strong>
+                  <span>Create or update activities and HTML offers</span>
+                </div>
+              </div>
+              <div class="pipeline-step">
+                <span class="step-num">4</span>
+                <div class="step-content">
+                  <strong>Audit in Target</strong>
+                  <span>Resources named with [GitHub][username] prefix</span>
+                </div>
+              </div>
+            </div>
+          </aside>
+        </div>
+      </section>
+
+      <section class="stats-bar">
+        <div class="container stats-grid">
+          <div class="stat-item">
+            <div class="stat-value">2</div>
+            <div class="stat-label">Deploy modes (create &amp; update)</div>
+          </div>
+          <div class="stat-item">
+            <div class="stat-value">8</div>
+            <div class="stat-label">Adobe Target MCP tools</div>
+          </div>
+          <div class="stat-item">
+            <div class="stat-value">0</div>
+            <div class="stat-label">Manual config per activity</div>
+          </div>
+          <div class="stat-item">
+            <div class="stat-value">100%</div>
+            <div class="stat-label">Git-driven workflow</div>
+          </div>
+        </div>
+      </section>
+
+      <section class="section" id="features">
+        <div class="container">
+          <header class="section-header">
+            <h2>Everything you need for Target GitOps</h2>
+            <p>
+              A complete pipeline from activity scaffolding to production
+              deploy — with validation gates, duplicate protection, and
+              traceable naming.
+            </p>
+          </header>
+          <div class="features-grid">
+            <article class="feature-card">
+              <div class="feature-icon">📁</div>
+              <h3>Activity-as-Code</h3>
+              <p>
+                Each Target activity is a self-contained folder with
+                <code>activity-info.json</code> and HTML offer files. No
+                central registry required.
+              </p>
+            </article>
+            <article class="feature-card">
+              <div class="feature-icon">🔄</div>
+              <h3>Create &amp; Update</h3>
+              <p>
+                Deploy brand-new activities on first merge, then update existing
+                HTML offers when <code>activity_id</code> and
+                <code>offer_id</code> are saved.
+              </p>
+            </article>
+            <article class="feature-card">
+              <div class="feature-icon">🔍</div>
+              <h3>Auto-Discovery</h3>
+              <p>
+                Activity folders are discovered automatically from the
+                repository. Global settings live in
+                <code>deploy.config.json</code> only.
+              </p>
+            </article>
+            <article class="feature-card">
+              <div class="feature-icon">✅</div>
+              <h3>CI Gate</h3>
+              <p>
+                Pull requests fail unless they include a valid activity create
+                or update. Prevents empty merges that would skip deploy.
+              </p>
+            </article>
+            <article class="feature-card">
+              <div class="feature-icon">🛡️</div>
+              <h3>HTML Validation</h3>
+              <p>
+                HTML5 structure, embedded CSS and JavaScript syntax checks, plus
+                Prettier formatting — all enforced before merge.
+              </p>
+            </article>
+            <article class="feature-card">
+              <div class="feature-icon">🔐</div>
+              <h3>Secure Auth</h3>
+              <p>
+                GitHub Secrets for Adobe IMS credentials with automatic token
+                refresh on 401 using client credentials.
+              </p>
+            </article>
+          </div>
+        </div>
+      </section>
+
+      <section class="section pros-cons-section" id="pros-cons">
+        <div class="container">
+          <header class="section-header">
+            <h2>Pros &amp; Cons</h2>
+            <p>
+              An honest look at deploying Adobe Target activities through GitHub
+              and MCP — built for time savings and team efficiency.
+            </p>
+          </header>
+
+          <div class="pros-cons-grid">
+            <div class="pros-cons-card pros-card">
+              <div class="pros-cons-header">
+                <span class="pros-cons-badge pros-badge">Pros</span>
+                <h3>Why teams choose this approach</h3>
+              </div>
+              <ul class="pros-cons-list pros-list">
+                <li>
+                  <span class="list-icon">✓</span>
+                  <div>
+                    <strong>Version-controlled activities</strong>
+                    <span>Every HTML offer and config change is tracked in Git with full history and blame.</span>
+                  </div>
+                </li>
+                <li>
+                  <span class="list-icon">✓</span>
+                  <div>
+                    <strong>Automated deploy on merge</strong>
+                    <span>No manual copy-paste into Adobe Target — merge to <code>main</code> and the pipeline runs.</span>
+                  </div>
+                </li>
+                <li class="pro-highlight">
+                  <span class="list-icon">✓</span>
+                  <div>
+                    <strong>Major time savings</strong>
+                    <span class="pro-tag">Time Saver</span>
+                    <span>Skip repetitive Target UI steps — no manual offer creation, HTML upload, or variant attachment on every change.</span>
+                  </div>
+                </li>
+                <li class="pro-highlight">
+                  <span class="list-icon">✓</span>
+                  <div>
+                    <strong>Faster go-live cycles</strong>
+                    <span class="pro-tag">Efficiency</span>
+                    <span>Edit HTML locally, open a PR, and merge. Deploy completes in minutes instead of a long manual Target workflow.</span>
+                  </div>
+                </li>
+                <li class="pro-highlight">
+                  <span class="list-icon">✓</span>
+                  <div>
+                    <strong>Efficient team collaboration</strong>
+                    <span class="pro-tag">Efficiency</span>
+                    <span>Multiple marketers and developers work in parallel on branches — reviews happen in GitHub, not over email or screenshots.</span>
+                  </div>
+                </li>
+                <li class="pro-highlight">
+                  <span class="list-icon">✓</span>
+                  <div>
+                    <strong>Team review before deploy</strong>
+                    <span class="pro-tag">Quality Gate</span>
+                    <span>Your team reviews your code in pull requests first. Only after approval and merge to <code>main</code> is the activity pushed to Adobe Target.</span>
+                  </div>
+                </li>
+                <li>
+                  <span class="list-icon">✓</span>
+                  <div>
+                    <strong>Pull request validation</strong>
+                    <span>Broken HTML, invalid JSON, or empty merges are caught before they reach production.</span>
+                  </div>
+                </li>
+                <li>
+                  <span class="list-icon">✓</span>
+                  <div>
+                    <strong>Official Adobe Target MCP</strong>
+                    <span>Uses the native MCP server — no custom APIs or brittle screen-scraping integrations.</span>
+                  </div>
+                </li>
+                <li>
+                  <span class="list-icon">✓</span>
+                  <div>
+                    <strong>Zero per-activity registration</strong>
+                    <span>Add a folder with <code>activity-info.json</code> and it is auto-discovered. No central config edits.</span>
+                  </div>
+                </li>
+                <li>
+                  <span class="list-icon">✓</span>
+                  <div>
+                    <strong>Traceable naming</strong>
+                    <span>Activities and offers are prefixed with <code>[GitHub][username]</code> for clear audit trails.</span>
+                  </div>
+                </li>
+                <li>
+                  <span class="list-icon">✓</span>
+                  <div>
+                    <strong>Create and update in one workflow</strong>
+                    <span>First deploy creates the activity; later commits update offers without rebuilding from scratch.</span>
+                  </div>
+                </li>
+                <li>
+                  <span class="list-icon">✓</span>
+                  <div>
+                    <strong>One-command activity setup</strong>
+                    <span class="pro-tag">Time Saver</span>
+                    <span>Scaffold a full activity folder in seconds with <code>create_activity.py</code> — no boilerplate typing or config hunting.</span>
+                  </div>
+                </li>
+                <li>
+                  <span class="list-icon">✓</span>
+                  <div>
+                    <strong>Safe by default</strong>
+                    <span>Activities are not auto-activated — content lands in a saved state for review in the Target UI.</span>
+                  </div>
+                </li>
+              </ul>
+            </div>
+
+            <div class="pros-cons-card cons-card">
+              <div class="pros-cons-header">
+                <span class="pros-cons-badge cons-badge">Cons</span>
+                <h3>Things to be aware of</h3>
+              </div>
+              <ul class="pros-cons-list cons-list">
+                <li>
+                  <span class="list-icon">!</span>
+                  <div>
+                    <strong>Requires saved IDs for updates</strong>
+                    <span>After the first deploy, you must copy <code>activity_id</code> and <code>offer_id</code> back into the repo.</span>
+                  </div>
+                </li>
+                <li>
+                  <span class="list-icon">!</span>
+                  <div>
+                    <strong>Activity changes only</strong>
+                    <span>Docs-only or script-only merges fail CI — every merge to <code>main</code> needs an activity change.</span>
+                  </div>
+                </li>
+                <li>
+                  <span class="list-icon">!</span>
+                  <div>
+                    <strong>Adobe credentials setup</strong>
+                    <span>GitHub Secrets and IMS client credentials must be configured before the first deploy works.</span>
+                  </div>
+                </li>
+              </ul>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section class="section" id="architecture">
+        <div class="container">
+          <header class="section-header">
+            <h2>Architecture</h2>
+            <p>
+              From developer workflow to Adobe Target — a clear, auditable path
+              for every activity change.
+            </p>
+          </header>
+
+          <div class="architecture-panel">
+            <div class="flow-diagram" role="img" aria-label="Deploy architecture flow">
+              <div class="flow-column">
+                <div class="flow-column-label">Developer</div>
+                <div class="flow-node">Create / edit activity folder</div>
+                <div class="flow-node">Open Pull Request</div>
+                <div class="flow-node">Merge to main</div>
+              </div>
+              <div class="flow-arrow">→</div>
+              <div class="flow-column">
+                <div class="flow-column-label">GitHub Actions</div>
+                <div class="flow-node highlight">Validate activity changes</div>
+                <div class="flow-node highlight">Validate HTML / CSS / JS</div>
+                <div class="flow-node highlight">Deploy job (production)</div>
+              </div>
+              <div class="flow-arrow">→</div>
+              <div class="flow-column">
+                <div class="flow-column-label">Adobe Target MCP</div>
+                <div class="flow-node">targetmcp.adobe.io/mcp</div>
+                <div class="flow-node">Create / update activities</div>
+                <div class="flow-node">Create / update HTML offers</div>
+              </div>
+            </div>
+
+            <div class="mode-cards">
+              <article class="mode-card">
+                <span class="mode-badge create">Create</span>
+                <h3>New activity folder</h3>
+                <p>
+                  Triggered when a new <code>activity-info.json</code> is added
+                  in the merge. Creates the activity, HTML offer, and attaches
+                  the offer to the variant.
+                </p>
+                <div class="code-block">activity-info.json (new)
+  → create_xt_activity / create_ab_activity
+  → create_target_offer
+  → update_variant_offer</div>
+              </article>
+              <article class="mode-card">
+                <span class="mode-badge update">Update</span>
+                <h3>Existing activity folder</h3>
+                <p>
+                  Triggered when any file changes inside an existing activity
+                  folder. Requires saved <code>activity_id</code> and
+                  <code>offer_id</code> values.
+                </p>
+                <div class="code-block">activity-info.json (with IDs)
+  → update_target_offer</div>
+              </article>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section class="section" id="quickstart">
+        <div class="container">
+          <header class="section-header">
+            <h2>Quick Start</h2>
+            <p>
+              Go from zero to a deployed Adobe Target activity in five steps.
+            </p>
+          </header>
+
+          <div class="steps-timeline">
+            <div class="timeline-step">
+              <div class="timeline-marker">1</div>
+              <div class="timeline-body">
+                <h3>Clone &amp; configure</h3>
+                <p>
+                  Clone the repository and set your deploy username in
+                  <code>deploy.config.json</code>.
+                </p>
+                <div class="code-block">git clone https://github.com/adobemohit/analogDevices.git
+cd analogDevices</div>
+              </div>
+            </div>
+
+            <div class="timeline-step">
+              <div class="timeline-marker">2</div>
+              <div class="timeline-body">
+                <h3>Add GitHub Secrets</h3>
+                <p>
+                  In <strong>Settings → Secrets and variables → Actions</strong>,
+                  add your Adobe IMS credentials.
+                </p>
+                <table class="doc-table">
+                  <thead>
+                    <tr>
+                      <th>Secret</th>
+                      <th>Description</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr>
+                      <td><code>ADOBE_ACCESS_TOKEN</code></td>
+                      <td>Adobe IMS bearer token for Target MCP</td>
+                    </tr>
+                    <tr>
+                      <td><code>ADOBE_CLIENT_ID</code></td>
+                      <td>Adobe Developer Console client ID</td>
+                    </tr>
+                    <tr>
+                      <td><code>ADOBE_CLIENT_SECRET</code></td>
+                      <td>Adobe Developer Console client secret</td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+
+            <div class="timeline-step">
+              <div class="timeline-marker">3</div>
+              <div class="timeline-body">
+                <h3>Create your first activity</h3>
+                <p>
+                  Scaffold a new activity folder from the built-in template.
+                </p>
+                <div class="code-block">python scripts/create_activity.py summer_promo_xt_test "Summer Promo XT Test"</div>
+              </div>
+            </div>
+
+            <div class="timeline-step">
+              <div class="timeline-marker">4</div>
+              <div class="timeline-body">
+                <h3>Open a pull request</h3>
+                <p>
+                  Edit the HTML offer, commit, and open a PR. CI validates
+                  activity changes and code quality before merge.
+                </p>
+              </div>
+            </div>
+
+            <div class="timeline-step">
+              <div class="timeline-marker">5</div>
+              <div class="timeline-body">
+                <h3>Merge &amp; save IDs</h3>
+                <p>
+                  After merge to <code>main</code>, the deploy job publishes to
+                  Adobe Target. Copy <code>activity_id</code> and
+                  <code>offer_id</code> from the Actions log into
+                  <code>activity-info.json</code> for future updates.
+                </p>
+                <div class="code-block">{
+  <span class="string">"activity_id"</span>: <span class="keyword">123456</span>,
+  <span class="string">"variants"</span>: [{
+    <span class="string">"offer_id"</span>: <span class="keyword">789012</span>
+  }]
+}</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section class="section" id="docs">
+        <div class="container">
+          <header class="section-header">
+            <h2>Documentation</h2>
+            <p>
+              Reference guides for activity folders, configuration, and the
+              GitHub Actions pipeline.
+            </p>
+          </header>
+
+          <div class="docs-grid">
+            <article class="doc-card">
+              <div class="doc-card-header">
+                <h3>Activity Folder Convention</h3>
+              </div>
+              <div class="doc-card-body">
+                <div class="code-block">my_campaign_xt_test/
+├── activity-info.json
+└── my_campaign_xt_test_exp_a.html</div>
+                <table class="doc-table" style="margin-top: 1rem">
+                  <thead>
+                    <tr>
+                      <th>Field</th>
+                      <th>Required</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr>
+                      <td><code>activity_name</code></td>
+                      <td>Yes</td>
+                    </tr>
+                    <tr>
+                      <td><code>activity_type</code></td>
+                      <td>Yes (XT, AB, ABT)</td>
+                    </tr>
+                    <tr>
+                      <td><code>variants</code></td>
+                      <td>Yes</td>
+                    </tr>
+                    <tr>
+                      <td><code>activity_id</code></td>
+                      <td>For updates</td>
+                    </tr>
+                    <tr>
+                      <td><code>offer_id</code></td>
+                      <td>For updates</td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+            </article>
+
+            <article class="doc-card">
+              <div class="doc-card-header">
+                <h3>deploy.config.json</h3>
+              </div>
+              <div class="doc-card-body">
+                <table class="doc-table">
+                  <thead>
+                    <tr>
+                      <th>Key</th>
+                      <th>Default</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr>
+                      <td><code>mcp_server_url</code></td>
+                      <td>targetmcp.adobe.io/mcp</td>
+                    </tr>
+                    <tr>
+                      <td><code>deploy_modes</code></td>
+                      <td>create, update</td>
+                    </tr>
+                    <tr>
+                      <td><code>sync_activity_state</code></td>
+                      <td>false</td>
+                    </tr>
+                    <tr>
+                      <td><code>deploy_name_prefix</code></td>
+                      <td>[GitHub]</td>
+                    </tr>
+                    <tr>
+                      <td><code>check_duplicate_*</code></td>
+                      <td>true</td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+            </article>
+
+            <article class="doc-card">
+              <div class="doc-card-header">
+                <h3>GitHub Actions Jobs</h3>
+              </div>
+              <div class="doc-card-body">
+                <table class="doc-table">
+                  <thead>
+                    <tr>
+                      <th>Job</th>
+                      <th>Trigger</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr>
+                      <td>Validate activity changes</td>
+                      <td>PR + push to main</td>
+                    </tr>
+                    <tr>
+                      <td>Deploy to Adobe Target MCP</td>
+                      <td>Push to main only</td>
+                    </tr>
+                  </tbody>
+                </table>
+                <p style="margin-top: 1rem; font-size: 0.88rem; color: var(--text-muted)">
+                  Deploy uses the <code>production</code> environment. Enable
+                  branch protection requiring the validation check on
+                  <code>main</code>.
+                </p>
+              </div>
+            </article>
+
+            <article class="doc-card">
+              <div class="doc-card-header">
+                <h3>Adobe Target MCP Tools</h3>
+              </div>
+              <div class="doc-card-body">
+                <table class="doc-table">
+                  <thead>
+                    <tr>
+                      <th>Tool</th>
+                      <th>Purpose</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr>
+                      <td><code>create_xt_activity</code></td>
+                      <td>New XT activities</td>
+                    </tr>
+                    <tr>
+                      <td><code>create_ab_activity</code></td>
+                      <td>New A/B activities</td>
+                    </tr>
+                    <tr>
+                      <td><code>create_target_offer</code></td>
+                      <td>New HTML offers</td>
+                    </tr>
+                    <tr>
+                      <td><code>update_target_offer</code></td>
+                      <td>Update HTML offers</td>
+                    </tr>
+                    <tr>
+                      <td><code>update_variant_offer</code></td>
+                      <td>Attach offers to variants</td>
+                    </tr>
+                    <tr>
+                      <td><code>list_target_*</code></td>
+                      <td>Duplicate name checks</td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+            </article>
+          </div>
+
+          <div class="resources-grid" style="margin-top: 2rem">
+            <a class="resource-link" href="../README.md" target="_blank" rel="noopener">
+              <span class="resource-icon">📄</span>
+              <div>
+                <strong>README.md</strong>
+                <span>Full product documentation</span>
+              </div>
+            </a>
+            <a class="resource-link" href="../deploy.config.json" target="_blank" rel="noopener">
+              <span class="resource-icon">⚙️</span>
+              <div>
+                <strong>deploy.config.json</strong>
+                <span>Global deploy settings</span>
+              </div>
+            </a>
+            <a class="resource-link" href="../.github/workflows/deploy.yml" target="_blank" rel="noopener">
+              <span class="resource-icon">⚡</span>
+              <div>
+                <strong>deploy.yml</strong>
+                <span>GitHub Actions workflow</span>
+              </div>
+            </a>
+            <a class="resource-link" href="../_activity_template/activity-info.json" target="_blank" rel="noopener">
+              <span class="resource-icon">📋</span>
+              <div>
+                <strong>Activity Template</strong>
+                <span>Scaffold starting point</span>
+              </div>
+            </a>
+            <a class="resource-link" href="../scripts/create_activity.py" target="_blank" rel="noopener">
+              <span class="resource-icon">🛠️</span>
+              <div>
+                <strong>create_activity.py</strong>
+                <span>Activity scaffolding CLI</span>
+              </div>
+            </a>
+            <a class="resource-link" href="https://targetmcp.adobe.io/mcp" target="_blank" rel="noopener">
+              <span class="resource-icon">🔗</span>
+              <div>
+                <strong>Target MCP Server</strong>
+                <span>targetmcp.adobe.io/mcp</span>
+              </div>
+            </a>
+          </div>
+        </div>
+      </section>
+
+      <section class="section" id="faq">
+        <div class="container">
+          <header class="section-header">
+            <h2>Frequently Asked Questions</h2>
+            <p>Common issues and how to resolve them.</p>
+          </header>
+
+          <div class="faq-list">
+            <div class="faq-item">
+              <button class="faq-question" type="button">
+                CI fails: "No activity changes found in this merge"
+                <span class="faq-icon">+</span>
+              </button>
+              <div class="faq-answer">
+                Your PR must add a new activity folder (new
+                <code>activity-info.json</code>) or update an existing activity
+                folder. Run
+                <code>python scripts/create_activity.py</code> to scaffold a new
+                activity, or edit HTML in an existing folder with saved IDs.
+              </div>
+            </div>
+
+            <div class="faq-item">
+              <button class="faq-question" type="button">
+                Deploy fails: activity_id or offer_id required
+                <span class="faq-icon">+</span>
+              </button>
+              <div class="faq-answer">
+                For update deploys, save the <code>activity_id</code> and
+                <code>offer_id</code> returned from the first deploy into
+                <code>activity-info.json</code>, then commit and merge again.
+              </div>
+            </div>
+
+            <div class="faq-item">
+              <button class="faq-question" type="button">
+                Are activities auto-activated in Adobe Target?
+                <span class="faq-icon">+</span>
+              </button>
+              <div class="faq-answer">
+                No. <code>sync_activity_state</code> is disabled by default.
+                Activities are created in a saved state so your team can review
+                and activate manually in the Adobe Target UI.
+              </div>
+            </div>
+
+            <div class="faq-item">
+              <button class="faq-question" type="button">
+                How are activity and offer names formatted?
+                <span class="faq-icon">+</span>
+              </button>
+              <div class="faq-answer">
+                Deployed names are prefixed with
+                <code>[GitHub][username]</code> for traceability. Example:
+                <code>[GitHub][adobemohit] Summer Promo XT Test</code>.
+              </div>
+            </div>
+
+            <div class="faq-item">
+              <button class="faq-question" type="button">
+                Token rejected with 401 — what should I do?
+                <span class="faq-icon">+</span>
+              </button>
+              <div class="faq-answer">
+                The pipeline automatically retries with client credentials.
+                Verify <code>ADOBE_CLIENT_ID</code> and
+                <code>ADOBE_CLIENT_SECRET</code> have Target SDK scope. Update
+                <code>ADOBE_ACCESS_TOKEN</code> in GitHub Secrets if refresh
+                also fails.
+              </div>
+            </div>
+
+            <div class="faq-item">
+              <button class="faq-question" type="button">
+                Where should I store Adobe credentials?
+                <span class="faq-icon">+</span>
+              </button>
+              <div class="faq-answer">
+                Never commit credentials to the repository. Store them only in
+                GitHub Actions Secrets or your organization's secret manager.
+                Rotate immediately if exposed.
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+    </main>
+
+    <footer class="site-footer">
+      <div class="container">
+        <div class="footer-grid">
+          <div class="footer-brand">
+            <a class="brand" href="#top">
+              <span class="brand-mark">AT</span>
+              <span class="brand-text">
+                <span class="brand-title">Target Activity Deploy</span>
+                <span class="brand-subtitle">(Adobe Target GitOps Deployment)</span>
+              </span>
+            </a>
+            <p>
+              Target Activity Deploy using GitHub and MCP. GitOps pipeline for
+              Adobe Target activities and HTML offers.
+            </p>
+          </div>
+          <div class="footer-col">
+            <h4>Product</h4>
+            <ul>
+              <li><a href="#features">Features</a></li>
+              <li><a href="#pros-cons">Pros &amp; Cons</a></li>
+              <li><a href="#architecture">Architecture</a></li>
+              <li><a href="#quickstart">Quick Start</a></li>
+              <li><a href="#docs">Documentation</a></li>
+            </ul>
+          </div>
+          <div class="footer-col">
+            <h4>Resources</h4>
+            <ul>
+              <li>
+                <a href="../README.md" target="_blank" rel="noopener">README</a>
+              </li>
+              <li>
+                <a href="../deploy.config.json" target="_blank" rel="noopener"
+                  >Deploy Config</a
+                >
+              </li>
+              <li>
+                <a
+                  href="https://github.com/adobemohit/analogDevices"
+                  target="_blank"
+                  rel="noopener"
+                  >GitHub Repository</a
+                >
+              </li>
+              <li>
+                <a href="https://targetmcp.adobe.io/mcp" target="_blank" rel="noopener"
+                  >Target MCP</a
+                >
+              </li>
+            </ul>
+          </div>
+        </div>
+        <div class="footer-bottom">
+          <span>Target Activity Deploy using GitHub and MCP</span>
+          <span>Powered by Adobe Target MCP</span>
+        </div>
+      </div>
+    </footer>
+
+    <script src="js/main.js"></script>
+  </body>
+</html>
