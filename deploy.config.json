@@ -23,5 +23,9 @@
     "AB": "ab",
     "XT": "xt",
     "ABT": "abt"
+  },
+  "auth": {
+    "ims_token_url": "https://ims-na1.adobelogin.com/ims/token/v3",
+    "scopes": "openid,AdobeID,target_sdk,additional_info.roles,read_organizations,additional_info.projectedProductContext"
   }
 }
